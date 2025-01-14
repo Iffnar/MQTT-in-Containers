@@ -1,0 +1,45 @@
+services:
+  mqtt-broker:
+    image: eclipse-mosquitto:2.0.5
+    container_name: mqtt-broker
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    networks:
+      mqtt-net:
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+  publisher:
+    image: eclipse-mosquitto
+    container_name: mqtt-publisher
+    depends_on:
+      mqtt-broker:
+        condition: service_started
+    networks:
+      mqtt-net:
+    entrypoint: >
+      sh -c "while true; do
+      mosquitto_pub -h mqtt-broker -u hans -P password123 -t test/topic -m 'Hello World' -q 1;
+      echo 'Message published';
+      sleep 5;
+      done"
+
+  subscriber:
+    image: eclipse-mosquitto
+    container_name: mqtt-subscriber
+    depends_on:
+      mqtt-broker:
+        condition: service_started
+    networks:
+      mqtt-net:
+    entrypoint: >
+      sh -c "mosquitto_sub -h mqtt-broker -u peter -P password! -t test/topic -q 1"
+
+networks:
+  mqtt-net:
+    driver: bridge

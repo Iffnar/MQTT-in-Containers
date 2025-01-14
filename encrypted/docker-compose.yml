@@ -1,0 +1,58 @@
+services:
+  mqtt-broker:
+    image: eclipse-mosquitto:2.0.5
+    container_name: mqtt-encrypted-broker
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    networks:
+      mqtt-net2:
+          ipv4_address: 172.23.0.2
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./passwordfile.txt:/mosquitto/config/passwordfile.txt
+      - ./certs:/mosquitto/config/cert
+  publisher:
+    image: eclipse-mosquitto
+    container_name: mqtt-encrypted-publisher
+    depends_on:
+      mqtt-broker:
+        condition: service_started
+    networks:
+      mqtt-net2:
+         ipv4_address: 172.23.0.3
+    volumes:
+     - ./certs:/mosquitto/config/cert
+    entrypoint: >
+      sh -c "while true; do
+      mosquitto_pub -h 172.23.0.2 -p 8883 -u hans -P joebiden -t test/topic -m 'Hello World' -q 1 --cafile mosquitto/config/cert/ca.crt;
+      sleep 10;
+      done"
+
+  subscriber:
+    image: eclipse-mosquitto
+    container_name: mqtt-encypted-subscriber
+    depends_on:
+     mqtt-broker:
+      condition: service_started
+    networks:
+      mqtt-net2:
+          ipv4_address: 172.23.0.4
+    volumes:
+      - ./certs:/mosquitto/config/cert
+    entrypoint: >
+      sh -c "mosquitto_sub -h 172.23.0.2 -p 8883 -u peter -P berndschneider -t test/topic -q 1 --cafile mosquitto/config/cert/ca.crt"
+
+networks:
+  mqtt-net2:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.23.0.0/16
+          ip_range: 172.23.0.0/24
+          gateway: 172.23.0.1
