@@ -14,7 +14,7 @@ Note: The password for any certificate file is "test"
 
 CVE-2023-5632 <br>
 This CVE works with the encrypted Broker. To trigger the exploit all you need is the following command. The ip adress is static and should work unless you changed it:<br>
-openssl s_client -connect 172.23.0.2:8883<br>
+```openssl s_client -connect 172.23.0.2:8883```<br>
 It might be beneficial to limit the number of cpu cores of your testing enviroment. For WSL this can be done in the WSL settings.<br>
 CVE-2021-34432<br>
 This command only works with the unencrypted broker and if allow_anonymous is set to true in the mosquitto.conf file. But could also be replicated for the encrypted broker if you are able to sucessfully authenticate a package with topic length 0.<br>
